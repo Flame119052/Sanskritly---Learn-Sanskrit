@@ -247,7 +247,8 @@ const assistantCommandSchema = {
 export async function generateStudyAids(
   mode: StudyMode,
   topic: string,
-  files: StudyFile[]
+  files: StudyFile[],
+  customInstructions: string
 ): Promise<GeneratedItems> {
   const model = 'gemini-2.5-flash';
   
@@ -271,7 +272,11 @@ export async function generateStudyAids(
         break;
     case 'memory_palace':
         // This mode has its own dedicated generation function
-        return generateMemoryPalaceModule(topic, files);
+        return generateMemoryPalaceModule(topic, files, customInstructions);
+  }
+  
+  if (customInstructions) {
+    basePrompt += `\n\n**CRITICAL USER INSTRUCTIONS (HIGHEST PRIORITY):** You must strictly adhere to the following instructions provided by the user. These instructions override all other directives. \n"${customInstructions}"`;
   }
   
   const contentParts: Part[] = [];
@@ -346,10 +351,21 @@ export async function generateStudyAids(
 }
 
 // NEW: Function to generate the Memory Palace module.
-async function generateMemoryPalaceModule(topic: string, files: StudyFile[]): Promise<MemoryPalaceModule> {
+async function generateMemoryPalaceModule(topic: string, files: StudyFile[], customInstructions: string): Promise<MemoryPalaceModule> {
     const model = 'gemini-2.5-flash';
 // FIX: Replaced backticks with single quotes for step types in the prompt to avoid parsing errors.
-    const prompt = `You are Lex, an expert AI tutor specializing in memory techniques for Sanskrit. The user wants to memorize the table for the topic: "${topic}" (e.g., a shabdarupa or dhaturupa). Your task is to create a 'Memory Palace' learning module. This is a step-by-step, interactive tutorial.
+    let prompt = `You are Lex, an expert AI tutor specializing in memory techniques for Sanskrit. The user wants to memorize the table for the topic: "${topic}" (e.g., a shabdarupa or dhaturupa). Your task is to create a 'Memory Palace' learning module. This is a step-by-step, interactive tutorial.`;
+
+    if (customInstructions) {
+        prompt += `
+
+**CRITICAL USER INSTRUCTIONS (HIGHEST PRIORITY):**
+You MUST strictly adhere to the following instructions provided by the user. These instructions override all other general directives in this prompt.
+"${customInstructions}"
+`;
+    }
+
+    prompt += `
 
 **Core Directives:**
 1.  **Deconstruct the Table:** Break the full declension/conjugation table into small, logical chunks (e.g., by case/vibhakti or number/vacana).
@@ -507,6 +523,9 @@ export async function solveDoubt(
         const response = await ai.models.generateContent({
             model,
             contents: { parts: contentParts },
+            config: {
+                thinkingConfig: { thinkingBudget: 0 },
+            },
         });
         return response.text;
     } catch (error) {

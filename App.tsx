@@ -37,6 +37,9 @@ import {
   Bars3Icon,
   XMarkIcon,
   SparklesIcon,
+  ArrowUpTrayIcon,
+  TrashIcon,
+  FileTypeIcon
 } from './components/Icons';
 import { AuthModal } from './components/AuthModal';
 import { WelcomeModal } from './components/WelcomeModal';
@@ -101,7 +104,6 @@ function App() {
       
       setUserStats(getStats(user.username));
       setUserProgress(getProgress(user.username));
-      setStudyFiles(loadState<Record<SectionId, StudyFile[]>>(user.username, 'studyFiles') || {});
       setAuthModalOpen(false);
 
       // Show welcome modal for first-time users
@@ -120,9 +122,8 @@ function App() {
     if (user) {
       saveState(user.username, 'sections', sections);
       saveState(user.username, 'isSyllabusCustom', isSyllabusCustom);
-      saveState(user.username, 'studyFiles', studyFiles);
     }
-  }, [user, sections, isSyllabusCustom, studyFiles]);
+  }, [user, sections, isSyllabusCustom]);
 
   const handleLogin = async (username: string, pass: string) => {
     const loggedInUser = await login(username, pass);
@@ -157,7 +158,7 @@ function App() {
 
   const handleRevertToDefault = () => {
     if (user) {
-        clearUserState(user.username, ['sections', 'isSyllabusCustom', 'studyFiles']);
+        clearUserState(user.username, ['sections', 'isSyllabusCustom']);
         const clearedProgress = clearProgress(user.username); 
         setUserProgress(clearedProgress);
         setSections(DEFAULT_SECTIONS);
@@ -202,7 +203,7 @@ function App() {
     }));
   };
 
-  const handleGenerateStudyAids = useCallback(async (mode: StudyMode, topic: string) => {
+  const handleGenerateStudyAids = useCallback(async (mode: StudyMode, topic: string, customInstructions: string) => {
     setIsLoading(true);
     setError(null);
     setGeneratedItems(null);
@@ -218,7 +219,7 @@ function App() {
         : filesForSection;
 
     try {
-      const items = await generateStudyAids(mode, topic, filesToUse);
+      const items = await generateStudyAids(mode, topic, filesToUse, customInstructions);
       if (items.length > 0 && 'stepType' in items[0]) {
         setMemoryPalaceItems(items as MemoryPalaceModule);
       } else if (mode === 'learn') {
@@ -325,6 +326,36 @@ function App() {
                         )}
                     </div>
                  ))}
+
+                <div className="mt-8 border-t border-slate-800 pt-6">
+                  <h4 className="text-xl font-bold text-slate-200 mb-2">Section Materials</h4>
+                  <p className="text-sm text-slate-400 mb-4">Upload your notes or PDFs. Lex will use them to generate study aids for this section.</p>
+                  
+                  <div className="space-y-2 mb-4 max-h-48 overflow-y-auto pr-2">
+                      {filesForSection.map(file => (
+                          <div key={file.id} className="bg-slate-800/50 p-2 rounded-lg flex items-center justify-between animate-fade-in border border-slate-700">
+                              <div className="flex items-center gap-3 flex-1 overflow-hidden">
+                                  <FileTypeIcon type={file.type} className="w-5 h-5 flex-shrink-0" />
+                                  <span className="text-sm text-slate-200 truncate">{file.name}</span>
+                              </div>
+                              <button onClick={() => removeFile(section.id, file.id)} className="p-1.5 rounded-full hover:bg-slate-700 text-slate-400 hover:text-white flex-shrink-0 ml-2">
+                                  <TrashIcon className="w-5 h-5"/>
+                              </button>
+                          </div>
+                      ))}
+                  </div>
+
+                  <label className="w-full cursor-pointer border-2 border-dashed border-slate-700 hover:border-cyan-500 hover:bg-slate-800/50 rounded-lg p-4 flex flex-col items-center justify-center text-center text-slate-400 hover:text-cyan-400 transition-colors">
+                      <ArrowUpTrayIcon className="w-8 h-8 mb-1" />
+                      <span className="text-sm font-semibold">{filesForSection.length > 0 ? 'Upload more files' : 'Upload study materials'}</span>
+                      <input 
+                          type="file" 
+                          multiple
+                          className="hidden" 
+                          onChange={(e) => handleFileChange(section.id, e)} 
+                      />
+                  </label>
+                </div>
             </div>
 
             {/* Right Column: AI Tools */}

@@ -11,8 +11,7 @@ interface FocusDashboardProps {
   stats: UserStats | null;
   sections: Section[];
   isSyllabusCustom: boolean;
-// FIX: Updated the `onGenerate` prop to accept the full `StudyMode` type to support all generation options, including 'memory_palace'.
-  onGenerate: (mode: StudyMode, topic: string) => void;
+  onGenerate: (mode: StudyMode, topic: string, customInstructions: string) => void;
   onNavigate: (sectionId: string) => void;
 }
 
@@ -53,7 +52,7 @@ const FocusDashboard: React.FC<FocusDashboardProps> = ({ user, stats, sections, 
 
             // Handle command
             if (command.name === 'generate' && command.studyMode && command.topic) {
-                onGenerate(command.studyMode, command.topic);
+                onGenerate(command.studyMode, command.topic, '');
             } else if (command.name === 'navigate' && command.sectionId) {
                 onNavigate(command.sectionId);
             } // 'open_modal' and 'answer_only' are handled by displaying text

@@ -1,11 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { StudyMode } from '../types';
 // FIX: Replaced missing BrainIcon and ClipboardDocumentListIcon with existing BookOpenIcon and QuestionMarkCircleIcon to resolve import errors.
 import { BookOpenIcon, LightbulbIcon, QuestionMarkCircleIcon, ChatBubbleLeftRightIcon, KeyIcon } from './Icons';
 
 interface StudyToolsProps {
   selectedTopic: string | null;
-  onGenerate: (mode: StudyMode, topic: string) => void;
+  onGenerate: (mode: StudyMode, topic: string, customInstructions: string) => void;
   onDoubtSolverOpen: () => void;
 }
 
@@ -30,9 +30,11 @@ const ToolButton: React.FC<{
 );
 
 export const StudyTools: React.FC<StudyToolsProps> = ({ selectedTopic, onGenerate, onDoubtSolverOpen }) => {
+  const [customInstructions, setCustomInstructions] = useState('');
+  
   const handleGenerate = (mode: StudyMode) => {
     if (selectedTopic) {
-      onGenerate(mode, selectedTopic);
+      onGenerate(mode, selectedTopic, customInstructions);
     }
   };
 
@@ -48,6 +50,20 @@ export const StudyTools: React.FC<StudyToolsProps> = ({ selectedTopic, onGenerat
 
       {selectedTopic && (
         <div className="space-y-6">
+          <div>
+            <label htmlFor="custom-instructions" className="block text-sm font-medium text-slate-300 mb-2">
+              Custom Instructions (Optional)
+            </label>
+            <textarea
+              id="custom-instructions"
+              rows={3}
+              value={customInstructions}
+              onChange={(e) => setCustomInstructions(e.target.value)}
+              placeholder={`e.g., "Focus on the exceptions for ${selectedTopic}" or "Create very simple questions for a beginner."`}
+              className="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-3 py-2 text-white placeholder-slate-500 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+            />
+          </div>
+
           <div>
             <p className="text-sm text-slate-400 mb-2">Primary Learning Paths</p>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
